@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gateway-service.fullname" . }}
+  labels:
+    {{- include "gateway-service.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "gateway-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gateway-service.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gateway-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: gateway-service
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: gateway-config
+                  key: JWT_SECRET_KEY
+            - name: JWT_ACCESS_EXPIRATION
+              valueFrom:
+                configMapKeyRef:
+                  name: gateway-config  
+                  key: JWT_ACCESS_EXPIRATION
+            - name: JWT_REFRESH_EXPIRATION
+              valueFrom:
+                configMapKeyRef:
+                  name: gateway-config  
+                  key: JWT_REFRESH_EXPIRATION
+            - name: FLEX_USER_SERVICE_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: gateway-config  
+                  key: FLEX_USER_SERVICE_DOMAIN
+            - name: SWAGGER_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: gateway-config  
+                  key: SWAGGER_SERVER_URL
+            # - name: EUREKA_SERVICE_URL
+            #   valueFrom:
+            #     configMapKeyRef:
+            #       name: gateway-config  
+            #       key: EUREKA_SERVICE_URL
+            # - name: EUREKA_USERNAME
+            #   valueFrom:
+            #     configMapKeyRef:
+            #       name: gateway-config  
+            #       key: EUREKA_USERNAME
+            # - name: EUREKA_PASSWORD
+            #   valueFrom:
+            #     configMapKeyRef:
+            #       name: gateway-config  
+            #       key: EUREKA_PASSWORD
+            # - name: AI_SERVER_URL
+            #   valueFrom:
+            #     configMapKeyRef:
+            #       name: gateway-config  
+            #       key: AI_SERVER_URL
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }} 
