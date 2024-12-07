@@ -92,11 +92,6 @@ ingress:
 
 # config settings
 config:
-  AI_SERVER_URL: "https://jdmphmtrawtjxatf.tunnel-pt.elice.io"
-  EUREKA_PASSWORD: "codeping1!"
-  EUREKA_SERVICE_URL: "http://admin:codeping1!@172.16.212.30:8761/eureka/"
-  EUREKA_USERNAME: "admin"
-  FLEX_USER_SERVICE_DOMAIN: "http://172.16.212.106:8081"
   JWT_ACCESS_EXPIRATION: "1209600"
   JWT_REFRESH_EXPIRATION: "1800"
   JWT_SECRET_KEY: "943cb527164de7a08667b48ae9279a3888545bdcb83f1da6d178370eb015aecb"
